@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>聊天室</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .message-container {
+            height: 400px;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        #message_input {
+            resize: none;
+            height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>欢迎，{{ username }}！</h2>
+        <div class="message-container" id="message-container">
+            {% for message in messages %}
+                <div>{{ message }}</div>
+            {% endfor %}
+        </div>
+        <div class="mb-3">
+            <textarea id="message_input" class="form-control" rows="3" placeholder="输入消息..."></textarea>
+        </div>
+        <div>
+            <button class="btn btn-primary" onclick="sendMessage()">发送</button>
+            <label for="anonymous" class="form-check-label">匿名：</label>
+            <input type="checkbox" id="anonymous" class="form-check-input">
+            <a href="/logout" class="btn btn-danger">退出</a>
+        </div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        socket.on('message', function(data) {
+            $('.message-container').append($('<div>').text(data));
+            scrollToBottom();
+        });
+
+        function sendMessage() {
+            var message = $('#message_input').val();
+            var anonymous = $('#anonymous').prop('checked');
+            socket.emit('message', { message: message, anonymous: anonymous });
+            $('#message_input').val('');
+            scrollToBottom();
+        }
+
+        $('#message_input').keypress(function(event) {
+            if (event.keyCode === 13 && !event.shiftKey) { // Enter key without shift key
+                sendMessage();
+                return false; // Prevent new line in textarea
+            }
+        });
+
+        // 滚动到消息容器底部的函数
+        function scrollToBottom() {
+            var messageContainer = document.getElementById('message-container');
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+
+        // 页面加载时滚动到底部
+        $(document).ready(function() {
+            scrollToBottom();
+        });
+    </script>
+</body>
+</html>
